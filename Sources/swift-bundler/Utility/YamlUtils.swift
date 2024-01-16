@@ -1,5 +1,6 @@
 import Foundation
 
+#if false
 public enum YamlUtils {
   /// Replaces the incorrect swiftpm default args
   /// at the path to the .build/(debug/release).yaml
@@ -84,3 +85,4 @@ public enum YamlUtils {
     }
   }
 }
+#endif /* false */

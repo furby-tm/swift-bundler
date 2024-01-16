@@ -86,13 +86,6 @@ enum SwiftPackageManager {
   ) -> Result<Void, SwiftPackageManagerError> {
     log.info("Starting \(configuration.rawValue) build")
 
-    rewriteArgs(
-      packageDirectory: packageDirectory, 
-      configuration: configuration, 
-      platform: platform, 
-      platformVersion: platformVersion
-    )
-
     return createBuildArguments(
       product: product,
       in: packageDirectory,
@@ -101,26 +94,6 @@ enum SwiftPackageManager {
       platform: platform,
       platformVersion: platformVersion
     ).flatMap { arguments in
-      rewriteArgs(
-        packageDirectory: packageDirectory, 
-        configuration: configuration, 
-        platform: platform, 
-        platformVersion: platformVersion
-      )
-
-      for i in 0..<10
-      {
-        Task {
-          sleep(UInt32(i))
-          rewriteArgs(
-            packageDirectory: packageDirectory, 
-            configuration: configuration, 
-            platform: platform, 
-            platformVersion: platformVersion
-          )
-        }
-      }
-
       let process = Process.create(
         "swift",
         arguments: arguments,
@@ -128,45 +101,13 @@ enum SwiftPackageManager {
         runSilentlyWhenNotVerbose: false
       )
 
-      for i in 0..<10
-      {
-        Task {
-          sleep(UInt32(i))
-          rewriteArgs(
-            packageDirectory: packageDirectory, 
-            configuration: configuration, 
-            platform: platform, 
-            platformVersion: platformVersion
-          )
-        }
+      return process.runAndWait().mapError { error in
+        .failedToRunSwiftBuild(
+          command: "swift \(arguments.joined(separator: " "))",
+          error
+        )
       }
-
-
-      return process.runAndWait()
-        .mapError { error in
-          .failedToRunSwiftBuild(
-            command: "swift " + arguments.joined(separator: " "),
-            error
-          )
-        }
     }
-  }
-
-  static func rewriteArgs(
-    packageDirectory: URL, 
-    configuration: BuildConfiguration, 
-    platform: Platform, 
-    platformVersion: String
-  ) {
-    YamlUtils.rewriteArgs(
-      atPath: packageDirectory, 
-      for: configuration, 
-      with: platform == .iOS ? "ios\(platformVersion)"
-        : platform == .iOSSimulator ? "ios\(platformVersion)-simulator"
-        : platform == .visionOS ? "xros\(platformVersion)"
-        : "xros\(platformVersion)-simulator",
-      platform: platform
-    )
   }
 
   /// Creates the arguments for the Swift build command.

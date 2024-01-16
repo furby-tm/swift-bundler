@@ -88,6 +88,7 @@ enum SwiftPackageManager {
 
     return createBuildArguments(
       product: product,
+      in: packageDirectory,
       configuration: configuration,
       architectures: architectures,
       platform: platform,
@@ -119,6 +120,7 @@ enum SwiftPackageManager {
   /// - Returns: The build arguments, or a failure if an error occurs.
   static func createBuildArguments(
     product: String?,
+    in packageDirectory: URL,
     configuration: BuildConfiguration,
     architectures: [BuildArchitecture],
     platform: Platform,
@@ -148,6 +150,9 @@ enum SwiftPackageManager {
             "--target=\(targetTriple)",
             "-isysroot", sdkPath,
           ].flatMap { ["-Xcc", $0] }
+        YamlUtils.rewriteArgs(atPath: packageDirectory, 
+                              for: configuration, 
+                              with: targetTriple)
       case .iOSSimulator, .visionOSSimulator:
         let sdkPath: String
         switch getLatestSDKPath(for: platform) {
@@ -172,6 +177,9 @@ enum SwiftPackageManager {
             "--target=\(targetTriple)",
             "-isysroot", sdkPath,
           ].flatMap { ["-Xcc", $0] }
+        YamlUtils.rewriteArgs(atPath: packageDirectory, 
+                              for: configuration, 
+                              with: targetTriple)
       case .macOS, .linux:
         platformArguments = []
     }
@@ -291,6 +299,7 @@ enum SwiftPackageManager {
   ) -> Result<URL, SwiftPackageManagerError> {
     return createBuildArguments(
       product: nil,
+      in: packageDirectory,
       configuration: configuration,
       architectures: architectures,
       platform: platform,

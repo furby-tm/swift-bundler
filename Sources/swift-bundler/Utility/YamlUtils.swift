@@ -7,7 +7,8 @@ public enum YamlUtils {
   static func rewriteArgs(
     atPath pkgDirectory: URL,
     for configuration: BuildConfiguration, 
-    with triple: String
+    with triple: String,
+    platform: Platform
   ) {
     let pkgDir = pkgDirectory.absoluteString.replacingOccurrences(of: "file://", with: "")
 
@@ -45,8 +46,32 @@ public enum YamlUtils {
           // get the last part of the triple.
           for i in 0..<6 {
             // replace the gunk we don't want.
+            output = output.replacingOccurrences(of: "macosx14.0", with: triple)
             output = output.replacingOccurrences(of: "macosx1\(i).0", with: triple)
             output = output.replacingOccurrences(of: "macosx10.1\(i)", with: triple)
+
+            switch platform {
+              case .iOS:
+                output = output.replacingOccurrences(of: "MacOSX14.2", with: "iPhoneOS\(triple.replacingOccurrences(of: "ios", with: ""))")
+                output = output.replacingOccurrences(of: "MacOSX1\(i).\(i)", with: "iPhoneOS\(triple.replacingOccurrences(of: "ios", with: ""))")
+                output = output.replacingOccurrences(of: "MacOSX", with: "iPhoneOS")
+              case .iOSSimulator:
+                output = output.replacingOccurrences(of: "MacOSX14.2", with: "iPhoneSimulator\(triple.replacingOccurrences(of: "ios", with: "").replacingOccurrences(of: "-simulator", with: ""))")
+                output = output.replacingOccurrences(of: "MacOSX1\(i).\(i)", with: "iPhoneSimulator\(triple.replacingOccurrences(of: "ios", with: "").replacingOccurrences(of: "-simulator", with: ""))")
+                output = output.replacingOccurrences(of: "MacOSX", with: "iPhoneSimulator")
+                output = output.replacingOccurrences(of: "arm64-apple-ios17.0-simulator", with: "arm64-apple-ios17.2-simulator")
+                output = output.replacingOccurrences(of: "iPhoneSimulator17.0", with: "iPhoneSimulator17.2")
+              case .visionOS:
+                output = output.replacingOccurrences(of: "MacOSX14.2", with: "XROS\(triple.replacingOccurrences(of: "xros", with: ""))")
+                output = output.replacingOccurrences(of: "MacOSX1\(i).\(i)", with: "XROS\(triple.replacingOccurrences(of: "xros", with: ""))")
+                output = output.replacingOccurrences(of: "MacOSX", with: "XROS")
+              case .visionOSSimulator:
+                output = output.replacingOccurrences(of: "MacOSX14.2", with: "XRSimulator\(triple.replacingOccurrences(of: "xros", with: "").replacingOccurrences(of: "-simulator", with: ""))")
+                output = output.replacingOccurrences(of: "MacOSX1\(i).\(i)", with: "XRSimulator\(triple.replacingOccurrences(of: "xros", with: "").replacingOccurrences(of: "-simulator", with: ""))")
+                output = output.replacingOccurrences(of: "MacOSX", with: "XRSimulator")
+              default:
+                break
+            }
           }
 
           // write the file back out.

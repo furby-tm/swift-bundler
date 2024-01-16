@@ -9,13 +9,16 @@ public enum YamlUtils {
     for configuration: BuildConfiguration, 
     with triple: String
   ) {
+    let pkgDir = pkgDirectory.absoluteString.replacingOccurrences(of: "file://", with: "")
+
     // this is the full yaml file path from swiftpm.
-    var filePath = pkgDirectory.absoluteString.first == "/" 
-      ? String(pkgDirectory.absoluteString.dropFirst()) 
-      : pkgDirectory.absoluteString
+    var filePath = pkgDir.first == "/" ? String(pkgDir.dropFirst()) : pkgDir
 
     // add .build/(debug/release).yaml to the path.
-    filePath += "/.build/\(configuration.rawValue).yaml"
+    filePath += ".build/\(configuration.rawValue).yaml"
+
+    log.info("GOT PATH: \(filePath)")
+    log.info("GOT TRIPLE: \(triple)")
 
     // get the directory of the yaml file.
     let dir = "/" + filePath.components(separatedBy: "/").dropLast().joined(separator: "/")
@@ -37,12 +40,13 @@ public enum YamlUtils {
 
         do {
           // read in the file.
-          let yamlContent = try String(contentsOf: fileURL, encoding: .utf8)
+          var output = try String(contentsOf: fileURL, encoding: .utf8)
 
-          var output = yamlContent
-          for i in 0..<5 {
+          // get the last part of the triple.
+          for i in 0..<6 {
             // replace the gunk we don't want.
-            output = yamlContent.replacingOccurrences(of: "macosx1\(i).0", with: triple)
+            output = output.replacingOccurrences(of: "macosx1\(i).0", with: triple)
+            output = output.replacingOccurrences(of: "macosx10.1\(i)", with: triple)
           }
 
           // write the file back out.

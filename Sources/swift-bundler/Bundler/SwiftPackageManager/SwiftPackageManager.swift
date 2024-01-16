@@ -101,12 +101,26 @@ enum SwiftPackageManager {
         runSilentlyWhenNotVerbose: false
       )
 
-      return process.runAndWait().mapError { error in
-        return .failedToRunSwiftBuild(
-          command: "swift \(arguments.joined(separator: " "))",
-          error
+      Task {
+        sleep(5)
+
+        YamlUtils.rewriteArgs(
+          atPath: packageDirectory, 
+          for: configuration, 
+          with: platform == .iOS ? "ios\(platformVersion)"
+            : platform == .iOSSimulator ? "ios\(platformVersion)-simulator"
+            : platform == .visionOS ? "xros\(platformVersion)"
+            : "xros\(platformVersion)-simulator"
         )
       }
+
+      return process.runAndWait()
+        .mapError { error in
+          .failedToRunSwiftBuild(
+            command: "swift " + arguments.joined(separator: " "),
+            error
+          )
+        }
     }
   }
 
@@ -150,9 +164,6 @@ enum SwiftPackageManager {
             "--target=\(targetTriple)",
             "-isysroot", sdkPath,
           ].flatMap { ["-Xcc", $0] }
-        YamlUtils.rewriteArgs(atPath: packageDirectory, 
-                              for: configuration, 
-                              with: targetTriple)
       case .iOSSimulator, .visionOSSimulator:
         let sdkPath: String
         switch getLatestSDKPath(for: platform) {
@@ -177,9 +188,6 @@ enum SwiftPackageManager {
             "--target=\(targetTriple)",
             "-isysroot", sdkPath,
           ].flatMap { ["-Xcc", $0] }
-        YamlUtils.rewriteArgs(atPath: packageDirectory, 
-                              for: configuration, 
-                              with: targetTriple)
       case .macOS, .linux:
         platformArguments = []
     }
